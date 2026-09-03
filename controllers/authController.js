@@ -1,19 +1,19 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
+
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: true, 
+  sameSite: "none", 
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
-
 
 // ১. Credential Registration
 export const registerUser = async (req, res) => {
   try {
     const { name, email, image, password } = req.body;
-
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
     if (!passwordRegex.test(password)) {
@@ -43,6 +43,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// ২. Login
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -61,24 +62,29 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions).status(200).json({ 
-        message: "Login successful", 
-        role: user.role, 
-        name: user.name, 
-        image: user.image 
+    res.cookie("token", token, cookieOptions).status(200).json({
+      message: "Login successful",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+        isPremium: user.isPremium
+      }
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// ৩. Google Login
 export const googleLogin = async (req, res) => {
     try {
       const { name, email, image } = req.body;
   
       let user = await User.findOne({ email });
   
-      
       if (!user) {
         user = new User({
           name,
@@ -102,14 +108,21 @@ export const googleLogin = async (req, res) => {
   
       res.cookie("token", token, cookieOptions).status(200).json({ 
           message: "Google Login successful",
-          user: { id: user._id, role: user.role, name: user.name, email: user.email, image: user.image, isPremium: user.isPremium }
+          user: { 
+            id: user._id, 
+            role: user.role, 
+            name: user.name, 
+            email: user.email, 
+            image: user.image, 
+            isPremium: user.isPremium 
+          }
       });
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
     }
-  };
+};
 
-
+// ৪. Get Current User
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
@@ -120,12 +133,14 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+// ৫. Logout
 export const logoutUser = async (req, res) => {
     try {
         res.clearCookie("token", {
             httpOnly: cookieOptions.httpOnly,
             secure: cookieOptions.secure,
             sameSite: cookieOptions.sameSite,
+            maxAge: 0
         }).status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error" });
