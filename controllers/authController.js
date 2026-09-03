@@ -1,6 +1,13 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 
 // ১. Credential Registration
 export const registerUser = async (req, res) => {
@@ -54,12 +61,7 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    }).status(200).json({ 
+    res.cookie("token", token, cookieOptions).status(200).json({ 
         message: "Login successful", 
         role: user.role, 
         name: user.name, 
@@ -98,28 +100,32 @@ export const googleLogin = async (req, res) => {
         { expiresIn: "7d" }
       );
   
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      }).status(200).json({ 
-          message: "Google Login successful", 
-          role: user.role, 
-          name: user.name, 
-          image: user.image 
+      res.cookie("token", token, cookieOptions).status(200).json({ 
+          message: "Google Login successful",
+          user: { id: user._id, role: user.role, name: user.name, email: user.email, image: user.image, isPremium: user.isPremium }
       });
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   };
 
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user || user.isBlocked) return res.status(401).json({ message: "Unauthorized" });
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const logoutUser = async (req, res) => {
     try {
         res.clearCookie("token", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            httpOnly: cookieOptions.httpOnly,
+            secure: cookieOptions.secure,
+            sameSite: cookieOptions.sameSite,
         }).status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error" });

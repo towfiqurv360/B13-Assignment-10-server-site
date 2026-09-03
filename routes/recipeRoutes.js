@@ -4,7 +4,8 @@ import {
   getAllRecipes, 
   getRecipeById, 
   getMyRecipes, 
-  deleteRecipe, 
+  deleteRecipe,
+  updateRecipe,
   toggleLike,
   toggleFeatureRecipe 
 } from "../controllers/recipeController.js";
@@ -16,6 +17,7 @@ router.post("/", verifyToken, createRecipe);
 router.get("/", getAllRecipes);
 router.get("/my-recipes", verifyToken, getMyRecipes);
 router.get("/:id", getRecipeById);
+router.patch("/:id", verifyToken, updateRecipe);
 router.delete("/:id", verifyToken, deleteRecipe);
 router.patch("/:id/like", verifyToken, toggleLike); 
 router.patch("/:id/feature", verifyToken, verifyAdmin, toggleFeatureRecipe);

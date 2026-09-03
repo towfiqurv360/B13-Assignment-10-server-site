@@ -107,14 +107,39 @@ export const getMyRecipes = async (req, res) => {
   }
 };
 
-// Delete a recipe
+// Update a recipe (owner or admin)
+export const updateRecipe = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) return res.status(404).json({ message: "Recipe not found" });
+    if (recipe.authorId.toString() !== userId.toString() && user?.role !== "admin") {
+      return res.status(403).json({ message: "You are not allowed to edit this recipe" });
+    }
+    const allowed = ["recipeName", "recipeImage", "category", "cuisineType", "difficultyLevel", "preparationTime", "ingredients", "instructions"];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)));
+    const updated = await Recipe.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+    res.status(200).json({ message: "Recipe updated successfully", recipe: updated });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Delete a recipe (owner or admin)
 export const deleteRecipe = async (req, res) => {
   try {
-    const recipe = await Recipe.findByIdAndDelete(req.params.id);
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+    const recipe = await Recipe.findById(req.params.id);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
+    if (recipe.authorId.toString() !== userId.toString() && user?.role !== "admin") {
+      return res.status(403).json({ message: "You are not allowed to delete this recipe" });
+    }
+    await recipe.deleteOne();
     res.status(200).json({ message: "Recipe deleted successfully" });
   } catch (error) {
-    console.error("❌ Delete Recipe Error: ", error);
+    console.error("❌ Delete Recipe Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
