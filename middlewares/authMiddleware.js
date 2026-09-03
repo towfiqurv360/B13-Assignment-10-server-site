@@ -10,7 +10,7 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { userId, role, email }
+    req.user = decoded;
     next();
   } catch (error) {
     res.status(403).json({ message: "Invalid or expired token." });
@@ -24,7 +24,7 @@ export const verifyAdmin = async (req, res, next) => {
       return res.status(403).json({ message: "Access Denied. Admin only." });
     }
     next();
-  } catch (error) {
+    } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };

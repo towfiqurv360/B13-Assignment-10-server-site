@@ -2,23 +2,21 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-
 const cookieOptions = {
   httpOnly: true,
-  secure: true, 
-  sameSite: "none", 
+  secure: true,
+  sameSite: "none",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-// ১. Credential Registration
 export const registerUser = async (req, res) => {
   try {
     const { name, email, image, password } = req.body;
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
     if (!passwordRegex.test(password)) {
-      return res.status(400).json({ 
-        message: "Password must be at least 6 characters, with one uppercase and one lowercase letter." 
+      return res.status(400).json({
+        message: "Password must be at least 6 characters, with one uppercase and one lowercase letter."
       });
     }
 
@@ -26,14 +24,14 @@ export const registerUser = async (req, res) => {
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ 
-        name, 
-        email, 
-        image, 
-        password: hashedPassword,
-        role: "user",
-        isBlocked: false,
-        isPremium: false
+    const newUser = new User({
+      name,
+      email,
+      image,
+      password: hashedPassword,
+      role: "user",
+      isBlocked: false,
+      isPremium: false
     });
     await newUser.save();
 
@@ -43,14 +41,13 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ২. Login
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
-    
+
     if (user.isBlocked) return res.status(403).json({ message: "Account is blocked by Admin" });
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -78,51 +75,49 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ৩. Google Login
 export const googleLogin = async (req, res) => {
-    try {
-      const { name, email, image } = req.body;
-  
-      let user = await User.findOne({ email });
-  
-      if (!user) {
-        user = new User({
-          name,
-          email,
-          image,
-          password: "", 
-          role: "user",
-          isBlocked: false,
-          isPremium: false
-        });
-        await user.save();
-      }
-  
-      if (user.isBlocked) return res.status(403).json({ message: "Account is blocked by Admin" });
-  
-      const token = jwt.sign(
-        { userId: user._id, role: user.role, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-  
-      res.cookie("token", token, cookieOptions).status(200).json({ 
-          message: "Google Login successful",
-          user: { 
-            id: user._id, 
-            role: user.role, 
-            name: user.name, 
-            email: user.email, 
-            image: user.image, 
-            isPremium: user.isPremium 
-          }
+  try {
+    const { name, email, image } = req.body;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        image,
+        password: "",
+        role: "user",
+        isBlocked: false,
+        isPremium: false
       });
-    } catch (error) {
-      res.status(500).json({ message: "Server error", error: error.message });
+      await user.save();
     }
+
+    if (user.isBlocked) return res.status(403).json({ message: "Account is blocked by Admin" });
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie("token", token, cookieOptions).status(200).json({
+      message: "Google Login successful",
+      user: {
+        id: user._id,
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        isPremium: user.isPremium
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
 
-// ৪. Get Current User
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
@@ -133,16 +128,14 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-// ৫. Logout
 export const logoutUser = async (req, res) => {
-    try {
-        res.clearCookie("token", {
-            httpOnly: cookieOptions.httpOnly,
-            secure: cookieOptions.secure,
-            sameSite: cookieOptions.sameSite,
-            maxAge: 0
-        }).status(200).json({ message: "Logged out successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Server error" });
-    }
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    }).status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
