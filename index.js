@@ -16,18 +16,18 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 dotenv.config();
 const app = express();
 
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:3000",
-].filter(Boolean);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
-  },
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://b13-assignment-10-recipehub.vercel.app",
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true,
-}));
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
