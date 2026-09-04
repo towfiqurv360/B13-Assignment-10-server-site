@@ -4,8 +4,8 @@ import jwt from "jsonwebtoken";
 
 const cookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -80,6 +80,7 @@ export const googleLogin = async (req, res) => {
     const { name, email, image } = req.body;
 
     let user = await User.findOne({ email });
+    let statusCode = 200;
 
     if (!user) {
       user = new User({
@@ -92,6 +93,7 @@ export const googleLogin = async (req, res) => {
         isPremium: false
       });
       await user.save();
+      statusCode = 201;
     }
 
     if (user.isBlocked) return res.status(403).json({ message: "Account is blocked by Admin" });
@@ -102,7 +104,7 @@ export const googleLogin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions).status(200).json({
+    res.cookie("token", token, cookieOptions).status(statusCode).json({
       message: "Google Login successful",
       user: {
         id: user._id,
@@ -132,8 +134,8 @@ export const logoutUser = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     }).status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
