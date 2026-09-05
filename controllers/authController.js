@@ -2,11 +2,10 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-
 const cookieOptions = {
   httpOnly: true,
-  secure: true,       
-  sameSite: "none", 
+  secure: process.env.NODE_ENV === "production" ? true : true, 
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "none", 
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -133,11 +132,7 @@ export const getCurrentUser = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,      
-      sameSite: "none",  
-    }).status(200).json({ message: "Logged out successfully" });
+    res.clearCookie("token", cookieOptions).status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
