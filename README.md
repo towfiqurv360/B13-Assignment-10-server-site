@@ -59,6 +59,7 @@ JWT_SECRET=your_super_secret_jwt_key
 
 # Stripe Payment
 STRIPE_SECRET_KEY=your_stripe_secret_key
+---
 
 ## 🚀 How to Run Locally
 1. Clone the repository:
