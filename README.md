@@ -60,7 +60,7 @@ JWT_SECRET=your_super_secret_jwt_key
 # Stripe Payment
 STRIPE_SECRET_KEY=your_stripe_secret_key
 
-🚀 How to Run Locally
+## 🚀 How to Run Locally
 1. Clone the repository:
 
 git clone (https://github.com/towfiqurv360/B13-Assignment-10-server-site.git)
